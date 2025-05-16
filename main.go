@@ -14,17 +14,27 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 const (
-	GeminiAPIKey   = "AIzaSyCBPjYKJyl0j0PzmFrdZEGHmVGGkBOBb1U"
-	GeminiAPIURL   = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 	BackupDirName  = "backup"
 	SystemPrompt   = "You are an API for formatting and fixing spelling mistakes in a markdown file passed to you. Your two main focuses are DO NOT CHANGE the actual content or meaning of the file whatsoever, only rectify the grammer and make it beautifully well formatted in markdown, utilising all markdown tools. Nothing more. Ensure your response is PURELY the file, as its being used directly in the program. Dont say here you go: or anything, and dont embed in code blocks."
 	MaxRetries     = 5
 	InitialBackoff = 1 * time.Second
 	MaxBackoff     = 30 * time.Second
 	MaxConcurrent  = 3
+
+	// Default values for environment variables
+	DefaultGeminiAPIURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+	EnvFile             = ".env"
+)
+
+var (
+	// Environment variables
+	GeminiAPIKey string
+	GeminiAPIURL string
 )
 
 type GeminiRequest struct {
@@ -147,6 +157,30 @@ func (s *ApiSemaphore) Acquire() {
 
 func (s *ApiSemaphore) Release() {
 	<-s.ch
+}
+
+func init() {
+	// Load environment variables from .env file
+	err := godotenv.Load(EnvFile)
+	if err != nil {
+		fmt.Printf("Warning: .env file not found or couldn't be loaded: %v\n", err)
+		fmt.Println("Will check for environment variables directly or use defaults.")
+	}
+
+	// Get API key from environment variable
+	GeminiAPIKey = os.Getenv("GEMINI_API_KEY")
+	if GeminiAPIKey == "" {
+		fmt.Println("GEMINI_API_KEY not found in environment variables or .env file.")
+		fmt.Println("Please set it in .env file or as an environment variable.")
+		os.Exit(1)
+	}
+
+	// Get API URL from environment variable or use default
+	GeminiAPIURL = os.Getenv("GEMINI_API_URL")
+	if GeminiAPIURL == "" {
+		GeminiAPIURL = DefaultGeminiAPIURL
+		fmt.Println("GEMINI_API_URL not found, using default URL.")
+	}
 }
 
 func main() {
