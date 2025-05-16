@@ -1,4 +1,4 @@
-# fixmd
+# fix.md
 
 A command-line tool that automatically formats and fixes spelling errors in Markdown files using the Gemini AI API.
 
